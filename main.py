@@ -1,45 +1,45 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 app = FastAPI()
 
 
-# 1. Oddiy tekshirish
+# 1. Ma'lumot qolipi (Model)
+# WordPressdan bizga qanday ma'lumot kelishini oldindan aytamiz
+class XabarModel(BaseModel):
+    ism: str
+    xabar: str
+    email: str | None = None
+
+
 @app.get("/")
 def home():
+    return {"status": "Tizim alo darajada ishlayapti", "version": "3.0"}
+
+
+# 2. POST so'rov (Ma'lumot qabul qilish)
+# Bu funksiya WordPressdan kelgan ma'lumotni oladi
+@app.post("/kontakt-form")
+def xabarni_tekshir(data: XabarModel):
+    # Logika: Agar xabarda yomon so'z bo'lsa, rad etamiz
+    yomon_sozlar = ["spam", "reklama", "ahmoq"]
+
+    xabar_kichik = data.xabar.lower()
+
+    for soz in yomon_sozlar:
+        if soz in xabar_kichik:
+            return {
+                "success": False,
+                "javob": f"Kechirasiz {data.ism}, sizning xabaringizda taqiqlangan so'z ('{soz}') bor."
+            }
+
+    # Agar hammasi toza bo'lsa:
     return {
-        "status": "CI/CD muvaffaqiyatli ishlayapti! 🚀",
-        "author": "Davronbek Jalolov Doniyor o`g`li - Lead Python Developer",
-        "version": "v2.0"
+        "success": True,
+        "javob": f"Rahmat {data.ism}! Xabaringiz qabul qilindi. Biz sizga {data.email} orqali chiqamiz."
     }
 
 
-# 2. "Aqlli" funksiya: Ism bilan salomlashish
-# Brauzerda: /salom?ism=Ali deb yozilsa ishlaydi
-@app.get("/salom")
-def salom_ber(ism: str):
-    return {"xabar": f"Assalomu alaykum, {ism}! Ishlaringiz yaxshimi?"}
-
-
-# 3. Chatbot mantig'i (Sun'iy intellektdan oldingi bosqich)
-# Biz unga qoidalarni o'rgatamiz
-@app.get("/chat")
-def bot_bilan_gaplash(savol: str):
-    # Kichik harflarga o'tkazamiz (katta-kichik harf muammosi bo'lmasligi uchun)
-    savol = savol.lower()
-
-    if "narx" in savol or "pul" in savol:
-        javob = "Bizning xizmatlar narxi kelishilgan holda. Boshlang'ich narx: $100"
-    elif "wordpress" in savol:
-        javob = "Ha, men WordPress bo'yicha mutaxassisman. Qanday yordam kerak?"
-    elif "kim" in savol:
-        javob = "Men Davronbek yaratgan Python Microservice'man."
-    else:
-        javob = "Uzr, bu savolga hali javobim yo'q. AI ulaganingizdan keyin aytaman :)"
-
-    return {"bot_javobi": javob}
-
-
-# Serverni ishga tushirish qismi
 if __name__ == "__main__":
     import uvicorn
 
