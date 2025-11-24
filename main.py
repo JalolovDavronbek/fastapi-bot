@@ -8,7 +8,7 @@ app = FastAPI()
 def home():
     return {
         "status": "CI/CD muvaffaqiyatli ishlayapti! 🚀",
-        "author": "Davronbek Jalolov - Lead Python Developer",
+        "author": "Davronbek Jalolov Doniyor o`g`li - Lead Python Developer",
         "version": "v2.0"
     }
 
