@@ -6,7 +6,11 @@ app = FastAPI()
 # 1. Oddiy tekshirish
 @app.get("/")
 def home():
-    return {"status": "Server ishlayapti", "author": "Davronbek"}
+    return {
+        "status": "CI/CD muvaffaqiyatli ishlayapti! 🚀",
+        "author": "Davronbek - Lead Python Developer",
+        "version": "v2.0"
+    }
 
 
 # 2. "Aqlli" funksiya: Ism bilan salomlashish
