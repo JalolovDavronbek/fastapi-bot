@@ -1,0 +1,52 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches: [ "main" ]  # Kod "main" ga yuklanganda ishga tushadi
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodni tekshirib olish
+        uses: actions/checkout@v3
+
+      - name: Docker Hub ga kirish
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build va Push (Docker Hubga yuklash)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/fastapi-bot:latest
+
+  deploy_to_server:
+    needs: build_and_push  # Avval yuklab bo'lishini kutadi
+    runs-on: ubuntu-latest
+    steps:
+      - name: DigitalOcean serverga kirish va yangilash
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # 1. Docker o'rnatilganligini tekshirish (agar bo'lmasa o'rnatadi)
+            if ! command -v docker &> /dev/null; then
+                curl -fsSL https://get.docker.com -o get-docker.sh
+                sh get-docker.sh
+            fi
+
+            # 2. Eski konteynerni to'xtatish va o'chirish (xatolik bermasligi uchun || true qo'shilgan)
+            docker stop fastapi-bot || true
+            docker rm fastapi-bot || true
+            
+            # 3. Eng yangi versiyani tortib olish
+            docker pull ${{ secrets.DOCKER_USERNAME }}/fastapi-bot:latest
+            
+            # 4. Yangisini ishga tushirish (80-portda!)
+            docker run -d --name fastapi-bot -p 80:8000 --restart always ${{ secrets.DOCKER_USERNAME }}/fastapi-bot:latest
